@@ -6,3 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = "3.1.18"
+color-eyre = "0.6.1"
+
+ark-groth16 = "0.3.0"
+ark-bls12-381 = "0.3.0"
+ark-relations = "0.3.0"
+ark-serialize = "0.2.0"
+ark-ff = "0.3.0"
+ark-crypto-primitives = "0.3.0"
+ark-std = "0.3.0"
