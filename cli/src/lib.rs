@@ -1,23 +1,40 @@
-use std::{ops::MulAssign, str::FromStr};
-
 use ark_bls12_381::{Bls12_381, Fr};
 use ark_crypto_primitives::snark::*;
-use ark_ff::Field;
-use ark_groth16::Groth16;
+use ark_groth16::{Groth16, Proof, ProvingKey, VerifyingKey};
 use ark_relations::{
     lc,
     r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError},
 };
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use ark_std::UniformRand;
+use std::str::FromStr;
 
-#[derive(Copy, Clone)]
-pub struct MultiplyDemoCircuit {
+#[derive(Default, Copy, Clone)]
+pub struct MultiplyCircuit {
     a: Option<Fr>,
     b: Option<Fr>,
 }
 
-impl ConstraintSynthesizer<Fr> for MultiplyDemoCircuit {
+impl MultiplyCircuit {
+    pub fn new(a: &str, b: &str) -> Self {
+        Self {
+            a: Some(Fr::from_str(a).expect("The value have to be u64")),
+            b: Some(Fr::from_str(b).expect("The value have to be u64")),
+        }
+    }
+
+    pub fn prove(self, pk: ProvingKey<Bls12_381>) -> Proof<Bls12_381> {
+        let rng = &mut ark_std::test_rng();
+
+        Groth16::<Bls12_381>::prove(&pk, self, rng).unwrap()
+    }
+
+    pub fn setup(self) -> (ProvingKey<Bls12_381>, VerifyingKey<Bls12_381>) {
+        let rng = &mut ark_std::test_rng();
+
+        Groth16::<Bls12_381>::circuit_specific_setup(self, rng).unwrap()
+    }
+}
+
+impl ConstraintSynthesizer<Fr> for MultiplyCircuit {
     fn generate_constraints(self, cs: ConstraintSystemRef<Fr>) -> Result<(), SynthesisError> {
         let a = cs.new_witness_variable(|| self.a.ok_or(SynthesisError::AssignmentMissing))?;
         let b = cs.new_witness_variable(|| self.b.ok_or(SynthesisError::AssignmentMissing))?;
@@ -35,13 +52,17 @@ impl ConstraintSynthesizer<Fr> for MultiplyDemoCircuit {
     }
 }
 
+pub fn verify(vk: VerifyingKey<Bls12_381>, public_input: &[Fr], proof: Proof<Bls12_381>) -> bool {
+    Groth16::<Bls12_381>::verify(&vk, public_input, &proof).unwrap()
+}
+
 #[test]
 fn test_mult_groth16() {
     let rng = &mut ark_std::test_rng();
 
     // generate the setup parameters
     let (pk, vk) =
-        Groth16::<Bls12_381>::circuit_specific_setup(MultiplyDemoCircuit { a: None, b: None }, rng)
+        Groth16::<Bls12_381>::circuit_specific_setup(MultiplyCircuit { a: None, b: None }, rng)
             .unwrap();
 
     let a = Fr::from_str("20").unwrap();
@@ -51,7 +72,7 @@ fn test_mult_groth16() {
     // calculate the proof by passing witness variable value
     let proof = Groth16::<Bls12_381>::prove(
         &pk,
-        MultiplyDemoCircuit {
+        MultiplyCircuit {
             a: Some(a),
             b: Some(b),
         },
