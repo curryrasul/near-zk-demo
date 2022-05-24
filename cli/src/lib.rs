@@ -1,4 +1,4 @@
-use ark_bls12_381::{Bls12_381, Fr};
+use ark_bn254::{Bn254, Fr};
 use ark_crypto_primitives::snark::*;
 use ark_groth16::{Groth16, Proof, ProvingKey, VerifyingKey};
 use ark_relations::{
@@ -21,16 +21,16 @@ impl MultiplyCircuit {
         }
     }
 
-    pub fn prove(self, pk: ProvingKey<Bls12_381>) -> Proof<Bls12_381> {
+    pub fn prove(self, pk: ProvingKey<Bn254>) -> Proof<Bn254> {
         let rng = &mut ark_std::test_rng();
 
-        Groth16::<Bls12_381>::prove(&pk, self, rng).unwrap()
+        Groth16::<Bn254>::prove(&pk, self, rng).unwrap()
     }
 
-    pub fn setup(self) -> (ProvingKey<Bls12_381>, VerifyingKey<Bls12_381>) {
+    pub fn setup(self) -> (ProvingKey<Bn254>, VerifyingKey<Bn254>) {
         let rng = &mut ark_std::test_rng();
 
-        Groth16::<Bls12_381>::circuit_specific_setup(self, rng).unwrap()
+        Groth16::<Bn254>::circuit_specific_setup(self, rng).unwrap()
     }
 }
 
@@ -52,8 +52,8 @@ impl ConstraintSynthesizer<Fr> for MultiplyCircuit {
     }
 }
 
-pub fn verify(vk: VerifyingKey<Bls12_381>, public_input: &[Fr], proof: Proof<Bls12_381>) -> bool {
-    Groth16::<Bls12_381>::verify(&vk, public_input, &proof).unwrap()
+pub fn verify(vk: VerifyingKey<Bn254>, public_input: &[Fr], proof: Proof<Bn254>) -> bool {
+    Groth16::<Bn254>::verify(&vk, public_input, &proof).unwrap()
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn test_mult_groth16() {
 
     // generate the setup parameters
     let (pk, vk) =
-        Groth16::<Bls12_381>::circuit_specific_setup(MultiplyCircuit { a: None, b: None }, rng)
+        Groth16::<Bn254>::circuit_specific_setup(MultiplyCircuit { a: None, b: None }, rng)
             .unwrap();
 
     let a = Fr::from_str("20").unwrap();
@@ -70,7 +70,7 @@ fn test_mult_groth16() {
     let c = Fr::from_str("400").unwrap();
 
     // calculate the proof by passing witness variable value
-    let proof = Groth16::<Bls12_381>::prove(
+    let proof = Groth16::<Bn254>::prove(
         &pk,
         MultiplyCircuit {
             a: Some(a),
@@ -81,5 +81,5 @@ fn test_mult_groth16() {
     .unwrap();
 
     // validate the proof
-    assert!(Groth16::<Bls12_381>::verify(&vk, &[c], &proof).unwrap());
+    assert!(Groth16::<Bn254>::verify(&vk, &[c], &proof).unwrap());
 }

@@ -1,4 +1,4 @@
-use ark_bls12_381::{Bls12_381, Fr};
+use ark_bn254::{Bn254, Fr};
 use ark_groth16::{Proof, ProvingKey, VerifyingKey};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::io::Cursor;
@@ -6,7 +6,7 @@ use std::fs;
 use std::io;
 use std::str::FromStr;
 
-pub fn serialize_keys(keys: (ProvingKey<Bls12_381>, VerifyingKey<Bls12_381>)) {
+pub fn serialize_keys(keys: (ProvingKey<Bn254>, VerifyingKey<Bn254>)) {
     let mut buf_vk = vec![];
     let mut buf_pk = vec![];
 
@@ -17,7 +17,7 @@ pub fn serialize_keys(keys: (ProvingKey<Bls12_381>, VerifyingKey<Bls12_381>)) {
     vk.serialize(&mut buf_vk).unwrap();
 
     // println!("Proving key \n{:?}", buf_pk);
-    // println!("Verifying key \n{:?}", buf_vk);
+    println!("Verifying key \n{:?}", buf_vk);
 
     fs::write("snark/pk", buf_pk).unwrap();
     println!("Pk was written to snark/pk file");
@@ -26,7 +26,7 @@ pub fn serialize_keys(keys: (ProvingKey<Bls12_381>, VerifyingKey<Bls12_381>)) {
     println!("Vk was written to snark/vk file");
 }
 
-pub fn serialize_proof(proof: Proof<Bls12_381>) {
+pub fn serialize_proof(proof: Proof<Bn254>) {
     let mut buf_proof = vec![];
 
     proof.serialize(&mut buf_proof).unwrap();
@@ -36,25 +36,25 @@ pub fn serialize_proof(proof: Proof<Bls12_381>) {
     println!("Proof was written to snark/proof file");
 }
 
-pub fn deserialize_pk() -> ProvingKey<Bls12_381> {
+pub fn deserialize_pk() -> ProvingKey<Bn254> {
     let buf_pk = fs::read("snark/pk").unwrap();
     let cursor = Cursor::new(buf_pk);
 
-    <ProvingKey<Bls12_381>>::deserialize(cursor).unwrap()
+    <ProvingKey<Bn254>>::deserialize(cursor).unwrap()
 }
 
-pub fn deserialize_vk() -> VerifyingKey<Bls12_381> {
+pub fn deserialize_vk() -> VerifyingKey<Bn254> {
     let buf_vk = fs::read("snark/vk").unwrap();
     let cursor = Cursor::new(buf_vk);
 
-    <VerifyingKey<Bls12_381>>::deserialize(cursor).unwrap()
+    <VerifyingKey<Bn254>>::deserialize(cursor).unwrap()
 }
 
-pub fn deserialize_proof() -> Proof<Bls12_381> {
+pub fn deserialize_proof() -> Proof<Bn254> {
     let buf_proof = fs::read("snark/proof").unwrap();
     let cursor = Cursor::new(buf_proof);
 
-    <Proof<Bls12_381>>::deserialize(cursor).unwrap()
+    <Proof<Bn254>>::deserialize(cursor).unwrap()
 }
 
 pub fn get_witness() -> (String, String) {
