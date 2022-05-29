@@ -1,13 +1,15 @@
-use ark_bn254::Bn254;
+use ark_bn254::{Bn254, FrParameters};
+use ark_ff::Fp256;
 use ark_groth16::PreparedVerifyingKey;
 use ark_groth16::{Proof, ProvingKey, VerifyingKey};
 use ark_serialize::CanonicalSerialize;
-use color_eyre::Result;
 use std::fs;
 
-use super::data_structures::PvkJson;
+use crate::{PublicInput, PvkJson};
 
-pub fn serialize_keys(
+use crate::Result;
+
+pub(crate) fn serialize_keys(
     keys: (ProvingKey<Bn254>, VerifyingKey<Bn254>),
     vkey_path: &str,
     pkey_path: &str,
@@ -16,7 +18,7 @@ pub fn serialize_keys(
     let pk = keys.0;
 
     let mut buf_pk = vec![];
-    pk.serialize(&mut buf_pk).unwrap();
+    pk.serialize_unchecked(&mut buf_pk)?;
 
     fs::write(pkey_path, buf_pk)?;
     println!("Pkey was written to {}", pkey_path);
@@ -30,17 +32,33 @@ pub fn serialize_keys(
 }
 
 fn serialize_pvk(pvk: PreparedVerifyingKey<Bn254>, vkey_path: &str) -> Result<()> {
-    let ser_pvk = PvkJson::from(pvk);
+    let ser_pvk = PvkJson::from(&pvk);
+    let jsoned = serde_json::to_string(&ser_pvk)?;
+
+    fs::write(vkey_path, jsoned)?;
 
     Ok(())
 }
 
-pub fn serialize_proof(proof: Proof<Bn254>) {
+pub(crate) fn serialize_proof(proof: Proof<Bn254>, path: &str) -> Result<()> {
     let mut buf_proof = vec![];
 
-    proof.serialize_uncompressed(&mut buf_proof).unwrap();
-    println!("Proof \n{:?}", buf_proof);
+    proof.serialize_unchecked(&mut buf_proof)?;
 
-    fs::write("snark/proof", buf_proof).unwrap();
-    println!("Proof was written to snark/proof file");
+    fs::write(path, buf_proof)?;
+    println!("Proof was written to {} file", path);
+
+    Ok(())
+}
+
+pub(crate) fn serialize_input(elem: Fp256<FrParameters>, path: &str) -> Result<()> {
+    let mut buf_input = vec![];
+    elem.0.serialize_unchecked(&mut buf_input)?;
+
+    let jsoned: PublicInput = PublicInput::new(vec![buf_input]);
+    let jsoned = serde_json::to_string(&jsoned)?;
+
+    fs::write(path, jsoned)?;
+
+    Ok(())
 }

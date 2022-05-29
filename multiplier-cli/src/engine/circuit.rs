@@ -5,10 +5,10 @@ use ark_relations::{
 };
 
 #[derive(Default, Copy, Clone)]
-pub struct Circuit {
+pub(crate) struct Circuit {
     // Witness parameters
-    a: Option<Fr>,
-    b: Option<Fr>,
+    pub(crate) a: Option<Fr>,
+    pub(crate) b: Option<Fr>,
 }
 
 impl ConstraintSynthesizer<Fr> for Circuit {
@@ -28,30 +28,3 @@ impl ConstraintSynthesizer<Fr> for Circuit {
         Ok(())
     }
 }
-
-// impl MultiplyCircuit {
-//     pub fn new(a: &str, b: &str) -> Self {
-//         Self {
-//             a: Some(Fr::from_str(a).expect("The value have to be u64")),
-//             b: Some(Fr::from_str(b).expect("The value have to be u64")),
-//         }
-//     }
-
-//     pub fn prove(self, pk: ProvingKey<Bn254>) -> Proof<Bn254> {
-//         // Not secure
-//         let rng = &mut ark_std::test_rng();
-
-//         Groth16::<Bn254>::prove(&pk, self, rng).unwrap()
-//     }
-
-//     pub fn setup(self) -> (ProvingKey<Bn254>, VerifyingKey<Bn254>) {
-//         // Not secure
-//         let rng = &mut ark_std::test_rng();
-
-//         Groth16::<Bn254>::circuit_specific_setup(self, rng).unwrap()
-//     }
-// }
-
-// pub fn verify(vk: VerifyingKey<Bn254>, public_input: &[Fr], proof: Proof<Bn254>) -> bool {
-//     Groth16::<Bn254>::verify(&vk, public_input, &proof).unwrap()
-// }
