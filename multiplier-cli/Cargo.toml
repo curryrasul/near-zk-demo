@@ -1,12 +1,14 @@
 [package]
-name = "cli"
+name = "multiplier-cli"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Magamedrasul I. <curryrasul@gmail.com>"]
 
 [dependencies]
-clap = "3.1.18"
+clap = { version = "3.1.18", features = ["derive"] }
+serde = { version = "1.0.137", features = ["derive"] }
+serde_json = "1.0.81"
+
 color-eyre = "0.6.1"
 
 ark-groth16 = "0.3.0"
@@ -16,3 +18,4 @@ ark-serialize = "0.3.0"
 ark-ff = "0.3.0"
 ark-crypto-primitives = "0.3.0"
 ark-std = "0.3.0"
+ark-ec = "0.3.0"
