@@ -5,6 +5,8 @@ use ark_serialize::CanonicalSerialize;
 use color_eyre::Result;
 use std::fs;
 
+use super::data_structures::PvkJson;
+
 pub fn serialize_keys(
     keys: (ProvingKey<Bn254>, VerifyingKey<Bn254>),
     vkey_path: &str,
@@ -28,7 +30,9 @@ pub fn serialize_keys(
 }
 
 fn serialize_pvk(pvk: PreparedVerifyingKey<Bn254>, vkey_path: &str) -> Result<()> {
-    todo!()
+    let ser_pvk = PvkJson::from(pvk);
+
+    Ok(())
 }
 
 pub fn serialize_proof(proof: Proof<Bn254>) {

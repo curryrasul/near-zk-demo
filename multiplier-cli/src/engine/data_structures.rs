@@ -1,4 +1,5 @@
 use ark_bn254::Bn254;
+use ark_ec::bn::{BnParameters, G2Prepared};
 use ark_groth16::PreparedVerifyingKey;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::io::Cursor;
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /////////////////////////////////////////////////////
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-struct PvkJson {
+pub struct PvkJson {
     alpha_g1_beta_g2: Vec<u8>,
     delta_g2_neg_pc: Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>,
     gamma_g2_neg_pc: Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>,
@@ -74,7 +75,44 @@ impl From<PreparedVerifyingKey<Bn254>> for PvkJson {
 
 impl From<PvkJson> for PreparedVerifyingKey<Bn254> {
     fn from(ser_pvk: PvkJson) -> Self {
-        todo!()
+        let mut pvk = PreparedVerifyingKey::<Bn254>::default();
+
+        let cursor_first = Cursor::new(ser_pvk.alpha_g1_beta_g2);
+        pvk.alpha_g1_beta_g2 = <ark_ff::Fp12<<ark_bn254::Parameters as BnParameters>::Fp12Params>>::deserialize_uncompressed(cursor_first)
+            .expect("Failed deserialize alpha_g1_beta_g2");
+
+        let mut delta_g2_neg_pc = G2Prepared::<ark_bn254::Parameters>::default();
+        let mut gamma_g2_neg_pc = G2Prepared::<ark_bn254::Parameters>::default();
+
+        for i in 0..ser_pvk.delta_g2_neg_pc.len() {
+            let curs_1_1 = Cursor::new(&ser_pvk.delta_g2_neg_pc[i].0);
+            let curs_1_2 = Cursor::new(&ser_pvk.delta_g2_neg_pc[i].1);
+            let curs_1_3 = Cursor::new(&ser_pvk.delta_g2_neg_pc[i].2);
+
+            let curs_2_1 = Cursor::new(&ser_pvk.gamma_g2_neg_pc[i].0);
+            let curs_2_2 = Cursor::new(&ser_pvk.gamma_g2_neg_pc[i].1);
+            let curs_2_3 = Cursor::new(&ser_pvk.gamma_g2_neg_pc[i].2);
+
+            let delta_1 = <ark_ff::Fp2<<ark_bn254::Parameters as BnParameters>::Fp2Params>>::deserialize_uncompressed(curs_1_1)
+                .unwrap();
+            let delta_2 = 
+            <ark_ff::Fp2<<ark_bn254::Parameters as BnParameters>::Fp2Params>>::deserialize_uncompressed(curs_1_2)
+                .unwrap();
+            let delta_3 = <ark_ff::Fp2<<ark_bn254::Parameters as BnParameters>::Fp2Params>>::deserialize_uncompressed(curs_1_3)
+                .unwrap();
+
+            let gamma_1 = <ark_ff::Fp2<<ark_bn254::Parameters as BnParameters>::Fp2Params>>::deserialize_uncompressed(curs_2_1)
+                .unwrap();
+            let gamma_2 = <ark_ff::Fp2<<ark_bn254::Parameters as BnParameters>::Fp2Params>>::deserialize_uncompressed(curs_2_2)
+                .unwrap();
+            let gamma_3 = <ark_ff::Fp2<<ark_bn254::Parameters as BnParameters>::Fp2Params>>::deserialize_uncompressed(curs_2_3)
+                .unwrap();
+
+            delta_g2_neg_pc.ell_coeffs.push((delta_1, delta_2, delta_3));
+            gamma_g2_neg_pc.ell_coeffs.push((gamma_1, gamma_2, gamma_3));
+        }
+
+        pvk
     }
 }
 

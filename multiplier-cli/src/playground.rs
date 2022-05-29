@@ -1,9 +1,12 @@
 use std::fs;
 use std::str::FromStr;
 
-use ark_bn254::{g1, g2, Bn254, Fr, FrParameters, G1Affine};
-use ark_ec::models::bn::G2Prepared;
-use ark_ff::{fields::fp12_2over3over2::Fp12, BigInteger256, Fp256, Fp256Parameters};
+use ark_bn254::{g1, g2, Bn254, Fq2Parameters, Fr, FrParameters, G1Affine};
+use ark_ec::{bn::BnParameters, models::bn::G2Prepared};
+use ark_ff::{
+    fields::fp12_2over3over2::Fp12, BigInteger256, Fp256, Fp256Parameters, Fp2ParamsWrapper,
+    QuadExtField,
+};
 use ark_groth16::{PreparedVerifyingKey, VerifyingKey};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::io::Cursor;
@@ -55,15 +58,33 @@ fn other_test() {
 
     // println!("{}", gamma_g2_neg_pc.ell_coeffs.len());
 
-    println!("{}", delta_g2_neg_pc.ell_coeffs.len());
+    // println!("{}", delta_g2_neg_pc.ell_coeffs[0].0.s);
 
-    println!("{}", {
-        delta_g2_neg_pc.ell_coeffs[49]
-            .0
-            .serialize_uncompressed(&mut buf)
+    let elem = alpha_g1_beta_g2;
+
+    println!("{:#?}", elem);
+
+    elem.serialize_uncompressed(&mut buf).unwrap();
+
+    let curs = Cursor::new(buf);
+
+    // let elem_de =
+    //     <ark_ff::Fp2<<ark_bn254::Parameters as BnParameters>::Fp2Params>>::deserialize_uncompressed(curs)
+    //         .unwrap();
+
+    let elem_de = 
+        <ark_ff::Fp12<<ark_bn254::Parameters as BnParameters>::Fp12Params>>::deserialize_uncompressed(curs)
             .unwrap();
-        buf.len()
-    });
+
+    println!("{:#?}", elem_de);
+
+    // println!("{}", {
+    //     delta_g2_neg_pc.ell_coeffs[49]
+    //         .0
+    //         .serialize_uncompressed(&mut buf)
+    //         .unwrap();
+    //     buf.len()
+    // });
 
     // for elem in &delta_g2_neg_pc.ell_coeffs {
     //     let first = elem.0;
