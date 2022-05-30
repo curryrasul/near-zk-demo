@@ -1,6 +1,5 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::{env, log, near_bindgen, PanicOnDefault};
-use std::str::FromStr;
 
 use ark_bn254::{Bn254, Fr};
 use ark_crypto_primitives::snark::SNARK;
@@ -14,19 +13,23 @@ const TGAS: u64 = 1_000_000_000_000;
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct Verifier {
-    public_input: Vec<u8>,
+    public_input: Vec<Vec<u8>>,
     vk: Vec<u8>,
 }
 
 #[near_bindgen]
 impl Verifier {
     #[init]
-    pub fn new(public_input: Vec<u8>, vk: Vec<u8>) -> Self {
+    pub fn new(public_input: Vec<Vec<u8>>, vk: Vec<u8>) -> Self {
+        assert!(!env::state_exists(), "Contract already initialized");
+
+        log!("Contract is initialized");
+
         Self { public_input, vk }
     }
 
     pub fn verify(&self, proof: Vec<u8>) -> bool {
-        let c = Fr::from_str(&String::from("50")).unwrap();
+        let input = self.deserialize_public();
         log!("After public to Fr: {:?}", env::used_gas().0 / TGAS);
 
         let vk = self.deserialize_vk();
@@ -38,27 +41,33 @@ impl Verifier {
             env::used_gas().0 / TGAS
         );
 
-        let res = Groth16::<Bn254>::verify(&vk, &[c], &proof).unwrap();
+        let res = Groth16::<Bn254>::verify(&vk, &input, &proof).expect("Failed verifying prood");
         log!("After verification: {:?}", env::used_gas().0 / TGAS);
 
-        true
+        res
     }
 
-    fn deserialize_public(&self) -> Fp256<ark_bn254::FrParameters> {
-        let c = Cursor::new(&self.public_input);
-        let b = BigInteger256::deserialize_uncompressed(c).unwrap();
+    fn deserialize_public(&self) -> Vec<Fp256<ark_bn254::FrParameters>> {
+        let mut res = vec![];
 
-        Fr::new(b)
+        for v in &self.public_input {
+            let c = Cursor::new(v);
+            let b = BigInteger256::deserialize_unchecked(c).expect("Failed input deserialize");
+
+            res.push(Fr::new(b));
+        }
+
+        res
     }
 
     fn deserialize_vk(&self) -> VerifyingKey<Bn254> {
         let cursor = Cursor::new(&self.vk);
-        <VerifyingKey<Bn254>>::deserialize_uncompressed(cursor).unwrap()
+        <VerifyingKey<Bn254>>::deserialize_unchecked(cursor).expect("Failed vk deserialize")
     }
 
     fn deserialize_proof(proof: Vec<u8>) -> Proof<Bn254> {
         let cursor = Cursor::new(proof);
-        <Proof<Bn254>>::deserialize_uncompressed(cursor).unwrap()
+        <Proof<Bn254>>::deserialize_unchecked(cursor).expect("Failed proof deserialize")
     }
 
     #[private]
@@ -67,7 +76,7 @@ impl Verifier {
     }
 
     #[private]
-    pub fn change_public_input(&mut self, public_input: Vec<u8>) {
+    pub fn change_public_input(&mut self, public_input: Vec<Vec<u8>>) {
         self.public_input = public_input;
     }
 }

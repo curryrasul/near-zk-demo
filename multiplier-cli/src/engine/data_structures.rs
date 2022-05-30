@@ -168,10 +168,49 @@ pub struct PublicInput {
 }
 
 impl PublicInput {
-    pub fn new(input: Vec<Vec<u8>>) -> Self {
+    pub(crate) fn new(input: Vec<Vec<u8>>) -> Self {
         Self { input }
     }
+
+    pub(crate) fn get_input(self) -> Vec<Vec<u8>> {
+        self.input
+    }
 }
+
+/////////////////////////////////////////////////////
+
+// Specific for a project
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Constructor {
+    pub public_input: Vec<Vec<u8>>,
+    pub vk: Vec<u8>,
+}
+
+impl Constructor {
+    pub fn new(public_input: Vec<Vec<u8>>, vk: Vec<u8>) -> Self {
+        Self { public_input, vk }
+    }
+}
+
+/////////////////////////////////////////////////////
+
+// Specific for a project
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Proof {
+    proof: Vec<u8>,
+}
+
+impl Proof {
+    pub fn new(proof: Vec<u8>) -> Self {
+        Self { proof }
+    }
+
+    pub fn get_proof(self) -> Vec<u8> {
+        self.proof
+    }
+}
+
+/////////////////////////////////////////////////////
 
 #[cfg(test)]
 mod tests {

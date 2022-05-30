@@ -1,4 +1,5 @@
 use std::error;
+use std::fs;
 use std::str::FromStr;
 
 use ark_bn254::{Bn254, Fr};
@@ -37,10 +38,12 @@ pub fn prove(pkey_path: &str, witness_path: &str, proof_path: &str) -> Result<()
 
 pub fn verify(vkey_path: &str, public_path: &str, proof_path: &str) -> Result<bool> {
     let proof = deserialize_proof(proof_path)?;
-    let pvk = deserialize_vk(vkey_path)?;
+    // let pvk = deserialize_pvk(vkey_path)?;
+    let vk = deserialize_vk(vkey_path)?;
     let input = deserialize_input(public_path)?;
 
-    let res = ark_groth16::verifier::verify_proof(&pvk, &proof, &input)?;
+    // let res = ark_groth16::verifier::verify_proof(&pvk, &proof, &input)?;
+    let res = Groth16::verify(&vk, &input, &proof)?;
 
     Ok(res)
 }
@@ -48,6 +51,20 @@ pub fn verify(vkey_path: &str, public_path: &str, proof_path: &str) -> Result<bo
 pub fn prepare_input(input: &str, path: &str) -> Result<()> {
     let elem = Fr::from_str(input).expect("Cannot prepare public input");
     serialize_input(elem, path)?;
+
+    Ok(())
+}
+
+pub fn build_constructor(vkey_path: &str, input_path: &str, file_path: &str) -> Result<()> {
+    let jsoned_input = fs::read_to_string(input_path)?;
+    let input: PublicInput = serde_json::from_str(&jsoned_input)?;
+
+    let buf_vk = fs::read(vkey_path)?;
+
+    let jsoned = Constructor::new(input.get_input(), buf_vk);
+    let jsoned = serde_json::to_string(&jsoned)?;
+
+    fs::write(file_path, jsoned)?;
 
     Ok(())
 }

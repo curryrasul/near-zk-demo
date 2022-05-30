@@ -5,6 +5,7 @@ use ark_groth16::{Proof, ProvingKey, VerifyingKey};
 use ark_serialize::CanonicalSerialize;
 use std::fs;
 
+use crate::engine::data_structures::Proof as JsonedProof;
 use crate::{PublicInput, PvkJson};
 
 use crate::Result;
@@ -23,14 +24,29 @@ pub(crate) fn serialize_keys(
     fs::write(pkey_path, buf_pk)?;
     println!("Pkey was written to {}", pkey_path);
 
-    // Vkey serialization
-    let pvk = ark_groth16::prepare_verifying_key(&keys.1);
-    serialize_pvk(pvk, vkey_path)?;
+    // // Vkey serialization
+    // let pvk = ark_groth16::prepare_verifying_key(&keys.1);
+    // serialize_pvk(pvk, vkey_path)?;
+    // println!("PVkey was written to {}", vkey_path);
+
+    serialize_vk(keys.1, vkey_path)?;
     println!("Vkey was written to {}", vkey_path);
 
     Ok(())
 }
 
+#[allow(dead_code)]
+fn serialize_vk(vk: VerifyingKey<Bn254>, path: &str) -> Result<()> {
+    let mut buf_vk = vec![];
+
+    vk.serialize_unchecked(&mut buf_vk)?;
+
+    fs::write(path, buf_vk)?;
+
+    Ok(())
+}
+
+#[allow(dead_code)]
 fn serialize_pvk(pvk: PreparedVerifyingKey<Bn254>, vkey_path: &str) -> Result<()> {
     let ser_pvk = PvkJson::from(&pvk);
     let jsoned = serde_json::to_string(&ser_pvk)?;
@@ -45,7 +61,10 @@ pub(crate) fn serialize_proof(proof: Proof<Bn254>, path: &str) -> Result<()> {
 
     proof.serialize_unchecked(&mut buf_proof)?;
 
-    fs::write(path, buf_proof)?;
+    let jsoned = JsonedProof::new(buf_proof);
+    let jsoned = serde_json::to_string(&jsoned)?;
+
+    fs::write(path, jsoned)?;
     println!("Proof was written to {} file", path);
 
     Ok(())

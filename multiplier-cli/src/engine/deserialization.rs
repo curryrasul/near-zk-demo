@@ -1,9 +1,11 @@
 use ark_bn254::{Bn254, Fr, FrParameters};
 use ark_ff::{BigInteger256, Fp256};
-use ark_groth16::{PreparedVerifyingKey, Proof, ProvingKey};
+use ark_groth16::{PreparedVerifyingKey, Proof, ProvingKey, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
 use ark_std::io::Cursor;
 use std::fs;
+
+use crate::engine::data_structures::Proof as JsonedProof;
 
 use crate::Witness;
 use crate::{Circuit, PublicInput, PvkJson};
@@ -20,7 +22,8 @@ pub(crate) fn deserialize_pk(path: &str) -> Result<ProvingKey<Bn254>> {
     Ok(pkey)
 }
 
-pub(crate) fn deserialize_vk(path: &str) -> Result<PreparedVerifyingKey<Bn254>> {
+#[allow(dead_code)]
+pub(crate) fn deserialize_pvk(path: &str) -> Result<PreparedVerifyingKey<Bn254>> {
     let jsoned = fs::read_to_string(path)?;
 
     let pvk_json: PvkJson = serde_json::from_str(&jsoned)?;
@@ -28,9 +31,21 @@ pub(crate) fn deserialize_vk(path: &str) -> Result<PreparedVerifyingKey<Bn254>> 
     Ok(PreparedVerifyingKey::<Bn254>::from(&pvk_json))
 }
 
+#[allow(dead_code)]
+pub(crate) fn deserialize_vk(path: &str) -> Result<VerifyingKey<Bn254>> {
+    let buf_vk = fs::read(path)?;
+    let cursor = Cursor::new(buf_vk);
+
+    let vk = VerifyingKey::<Bn254>::deserialize_unchecked(cursor)?;
+
+    Ok(vk)
+}
+
 pub(crate) fn deserialize_proof(path: &str) -> Result<Proof<Bn254>> {
-    let buf_proof = fs::read(path)?;
-    let cursor = Cursor::new(buf_proof);
+    let jsoned = fs::read_to_string(path)?;
+    let jsoned: JsonedProof = serde_json::from_str(&jsoned)?;
+
+    let cursor = Cursor::new(jsoned.get_proof());
 
     let proof =
         <Proof<Bn254>>::deserialize_unchecked(cursor).expect("Failed proof deserialization");
